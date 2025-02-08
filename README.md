@@ -24,8 +24,8 @@ The heatmap above shows the edit distance calculation between two example senten
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/minimum-edit-distance-visualizer.git
-cd minimum-edit-distance-visualizer
+git clone https://github.com/Meggison/Minimum_Edit_Distance.git
+cd Minimum_Edit_Distance
 ```
 
 2. Create a virtual environment (optional but recommended):

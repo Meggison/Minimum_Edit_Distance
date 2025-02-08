@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimum Edit Distance Visualizer</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            background-color: var(--card-bg);
+            border-radius: 1rem;
+            box-shadow: var(--shadow-lg);
+            transform: translateY(0);
+            opacity: 1;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        h1 {
+            color: var(--text-primary);
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+            font-weight: 700;
+            position: relative;
+            padding-bottom: 1rem;
+        }
+
+        h1::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 4px;
+            background: linear-gradient(to right, var(--primary-color), var(--primary-hover));
+            border-radius: 2px;
+        }
+
+        .input-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+            animation: fadeIn 0.5s ease-out 0.2s both;
+        }
+
+        .input-group {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: var(--shadow-sm);
+            transform: translateY(0);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .input-group:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.75rem;
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 0.5rem;
+            resize: vertical;
+            min-height: 120px;
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .button-container {
+            text-align: center;
+            margin: 2rem 0;
+            animation: fadeIn 0.5s ease-out 0.4s both;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: var(--shadow-sm);
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button i {
+            font-size: 1.2rem;
+        }
+
+        .results {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: var(--shadow-sm);
+            margin-top: 2rem;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .results.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .results h3 {
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        #distance-result {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            padding: 1rem;
+            background-color: #f8fafc;
+            border-radius: 0.5rem;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        #heatmap {
+            margin: 2rem auto;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #heatmap.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .heatmap-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .loading {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            margin: 2rem 0;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Minimum Edit Distance Visualizer</h1>
+        
+        <div class="input-section">
+            <div class="input-group">
+                <label for="sentence1">First Sentence</label>
+                <textarea id="sentence1" placeholder="Enter the first sentence"></textarea>
+            </div>
+            <div class="input-group">
+                <label for="sentence2">Second Sentence</label>
+                <textarea id="sentence2" placeholder="Enter the second sentence"></textarea>
+            </div>
+        </div>
+
+        <div class="button-container">
+            <button onclick="calculateEditDistance()">
+                <i class="fas fa-calculator"></i>
+                Calculate Distance
+            </button>
+        </div>
+
+        <div class="loading">
+            <div class="loading-spinner"></div>
+        </div>
+
+        <div class="results" id="results">
+            <h3>Results</h3>
+            <p id="distance-result"></p>
+        </div>
+
+        <div class="heatmap-container">
+            <div id="heatmap"></div>
+        </div>
+    </div>
+
+    <script>
+        async function calculateEditDistance() {
+            const sentence1 = document.getElementById('sentence1').value;
+            const sentence2 = document.getElementById('sentence2').value;
+
+            if (!sentence1 || !sentence2) {
+                alert('Please enter both sentences');
+                return;
+            }
+
+            // Show loading spinner
+            document.querySelector('.loading').style.display = 'flex';
+            
+            // Disable button during calculation
+            const button = document.querySelector('button');
+            button.disabled = true;
+            button.style.opacity = '0.7';
+
+            try {
+                const response = await fetch('/calculate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ sentence1, sentence2 }),
+                });
+
+                const data = await response.json();
+                
+                // Show results with animation
+                const results = document.getElementById('results');
+                results.classList.add('visible');
+                
+                document.getElementById('distance-result').textContent = 
+                    `The minimum edit distance between the two sentences is: ${data.distance}`;
+
+                // Create heatmap with enhanced styling
+                const heatmapData = [{
+                    z: data.matrix,
+                    x: data.str2,
+                    y: data.str1,
+                    type: 'heatmap',
+                    colorscale: [
+                        [0, '#ffffff'],
+                        [0.3, '#e0e7ff'],
+                        [0.6, '#818cf8'],
+                        [1, '#4f46e5']
+                    ],
+                    showscale: true,
+                    hoverongaps: false,
+                    hoverinfo: 'text',
+                    text: data.matrix.map((row, i) => 
+                        row.map((val, j) => {
+                            const isMatch = i > 0 && j > 0 && data.sentence1[i-1] === data.sentence2[j-1];
+                            return `Value: ${val}${isMatch ? ' (Match)' : ''}`;
+                        })
+                    )
+                }];
+
+                const layout = {
+                    title: {
+                        text: 'Edit Distance Matrix Heatmap',
+                        font: {
+                            family: 'Inter',
+                            size: 24,
+                            color: '#1e293b'
+                        }
+                    },
+                    annotations: [],
+                    xaxis: {
+                        title: 'Second Sentence Characters',
+                        titlefont: {
+                            family: 'Inter',
+                            size: 16,
+                            color: '#64748b'
+                        },
+                        tickfont: {
+                            family: 'Inter',
+                            size: 14
+                        },
+                        side: 'bottom',
+                        gridcolor: '#e2e8f0',
+                        tickmode: 'array',
+                        ticktext: data.str2,
+                        tickvals: Array.from({length: data.str2.length}, (_, i) => i)
+                    },
+                    yaxis: {
+                        title: 'First Sentence Characters',
+                        titlefont: {
+                            family: 'Inter',
+                            size: 16,
+                            color: '#64748b'
+                        },
+                        tickfont: {
+                            family: 'Inter',
+                            size: 14
+                        },
+                        gridcolor: '#e2e8f0',
+                        tickmode: 'array',
+                        ticktext: data.str1,
+                        tickvals: Array.from({length: data.str1.length}, (_, i) => i)
+                    },
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    margin: {
+                        l: 80,
+                        r: 60,
+                        t: 80,
+                        b: 80
+                    },
+                    width: Math.min(800, window.innerWidth - 80),
+                    height: Math.min(800, window.innerWidth - 80),
+                    autosize: true
+                };
+
+                // Add value annotations
+                for (let i = 0; i < data.matrix.length; i++) {
+                    for (let j = 0; j < data.matrix[i].length; j++) {
+                        const isMatch = i > 0 && j > 0 && data.sentence1[i-1] === data.sentence2[j-1];
+                        layout.annotations.push({
+                            x: j,
+                            y: i,
+                            text: data.matrix[i][j].toString(),
+                            showarrow: false,
+                            font: {
+                                family: 'Inter',
+                                size: 14,
+                                color: data.matrix[i][j] > (Math.max(...data.matrix.flat()) / 2) ? 'white' : '#1e293b',
+                                weight: isMatch ? 'bold' : 'normal'
+                            },
+                            bgcolor: isMatch ? 'rgba(79, 70, 229, 0.1)' : null
+                        });
+                    }
+                }
+
+                const config = {
+                    responsive: true,
+                    displayModeBar: true,
+                    displaylogo: false,
+                    modeBarButtonsToRemove: ['lasso2d', 'select2d'],
+                    toImageButtonOptions: {
+                        format: 'png',
+                        filename: 'edit_distance_matrix',
+                        height: 800,
+                        width: 800,
+                        scale: 2
+                    }
+                };
+
+                await Plotly.newPlot('heatmap', heatmapData, layout, config);
+                
+                // Show heatmap with animation
+                const heatmap = document.getElementById('heatmap');
+                heatmap.classList.add('visible');
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while calculating the edit distance');
+            } finally {
+                // Hide loading spinner and re-enable button
+                document.querySelector('.loading').style.display = 'none';
+                button.disabled = false;
+                button.style.opacity = '1';
+            }
+        }
+
+        // Add input animations
+        const textareas = document.querySelectorAll('textarea');
+        textareas.forEach(textarea => {
+            textarea.addEventListener('focus', () => {
+                textarea.parentElement.style.transform = 'translateY(-5px)';
+            });
+            
+            textarea.addEventListener('blur', () => {
+                textarea.parentElement.style.transform = 'translateY(0)';
+            });
+        });
+    </script>
+</body>
+</html>
